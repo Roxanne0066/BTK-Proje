@@ -1,92 +1,158 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech Recognition</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            margin: 0;
-        }
-        #container {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #output {
-            margin-top: 20px;
-            font-size: 24px;
-            color: #333;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Dil Yardımcısı</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      margin: 0;
+    }
+
+    #container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #output {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
+
 <body>
-    <div id="container">
-        <h1>Speech Recognition Application</h1>
-        <button id="start-button">Start Listening</button>
-        <button id="stop-button">Stop Listening</button>
-        <div id="output">Recognized text will appear here...</div>
-    </div>
+  <div id="container">
+    <h1>Gemini Dil Yardımcısı</h1>
+    <button id="startButton">Mikrofonu Başlat</button>
+    <button id="stopButton" disabled>Mikrofonu Durdur</button>
+    <textarea id="userInput" placeholder="Metninizi buraya girebilir veya konuşabilirsiniz..."></textarea>
+    <button id="sendButton">Gönder</button>
+    <div id="output">Gemini'nin cevabı burada görünecek...</div>
+  </div>
 
-    <script>
-        const startButton = document.getElementById('start-button');
-        const stopButton = document.getElementById('stop-button');
-        const output = document.getElementById('output');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  <script>
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const sendButton = document.getElementById('sendButton');
+    const userInput = document.getElementById('userInput');
+    const output = document.getElementById('output');
+    const apiKey = "AIzaSyCHaXWMFcw-mek716o50vqxuleI02tFDm8"; 
 
-        recognition.lang = 'en-US'; // English
-        recognition.interimResults = false;
+    let recognition;
 
-        startButton.addEventListener('click', () => {
-            output.textContent = 'Listening...';
-            recognition.start();
-        });
+    try {
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    } catch (e) {
+      console.error(e);
+      alert('Konuşma tanıma bu tarayıcıda desteklenmiyor.');
+    }
 
-        stopButton.addEventListener('click', () => {
-            recognition.stop(); // Stop listening on button click
-        });
+    if (recognition) {
+      recognition.lang = 'tr-TR'; // Türkçe
+      recognition.interimResults = false;
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            output.textContent = transcript; // Display recognized text
-        };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+      };
 
-        recognition.onerror = (event) => {
-            output.textContent = 'Error: ' + event.error;
-        };
+      recognition.onerror = (event) => {
+        output.textContent = 'Hata: ' + event.error;
+      };
 
-        recognition.onend = () => {
-            if (output.textContent === 'Listening...') {
-                output.textContent = 'Listening ended. Please start again.';
-            } else {
-                output.textContent += ' (Stopped listening)';
-            }
-        };
+      startButton.addEventListener('click', () => {
+        recognition.start();
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        output.textContent = 'Dinleniyor...';
+      });
 
-        recognition.onnomatch = () => {
-            output.textContent = 'No speech was recognized.';
-        };
-    </script>
+      stopButton.addEventListener('click', () => {
+        recognition.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        output.textContent = '';
+      });
+    } else {
+      startButton.disabled = true;
+      stopButton.disabled = true;
+    }
+
+    sendButton.addEventListener('click', () => {
+      const text = userInput.value;
+      output.textContent = "Gemini'den cevap bekleniyor...";
+
+      fetch('https://api.gemini.google.com/v1/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          "model":   
+ "gemini-pro",
+          "prompt": {
+            "text": `${text} \n\nBu metnin dil kullanımı hakkında arkadaş canlısı ve detaylı bir şekilde geri bildirim ver. Yazım yanlışlarını, dil bilgisi hatalarını, üslup önerilerini ve genel olarak metnin nasıl daha iyi hale getirilebileceği konusunda tavsiyelerde bulun. Ayrıca, bu geri bildirimi sanki bir arkadaşınla konuşuyormuş gibi sesli olarak nasıl ifade edeceğini düşünerek yaz.`
+          }
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`API isteği başarısız oldu: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        const responseText = data.choices[0].text;
+        output.textContent = responseText;
+
+        const speech = new SpeechSynthesisUtterance(responseText);
+        speech.lang = 'tr-TR';
+        speechSynthesis.speak(speech);
+      })
+      .catch(error => {
+
+        output.textContent = "Bir hata oluştu: " + error.message; 
+      });
+    });
+  </script>
 </body>
 </html>
